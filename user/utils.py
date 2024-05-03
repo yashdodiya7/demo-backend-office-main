@@ -28,7 +28,7 @@ def validate_aadhar_text(text, name):
     # Split the text into lines
     lines = text.split('\n')
 
-    name_list = name.split(" ")
+    name_lower = name.lower().split()
 
     # Initialize variables to track validation results
     name_present = False
@@ -37,7 +37,7 @@ def validate_aadhar_text(text, name):
     # Iterate through each line of text
     for line in lines:
         # Check if the name is present in the line
-        if all(word in line for word in name_list):
+        if all(word.lower() in line.lower() for word in name_lower):
             name_present = True
 
         # Extract digits from the line

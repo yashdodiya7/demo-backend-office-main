@@ -85,7 +85,7 @@ class Listing(models.Model):
     image_urls = ArrayField(models.URLField(), blank=True, default=list)
 
     def __str__(self):
-        return f"{self.location} - {self.occupancy}"
+        return f"{self.location} - {self.occupancy} - {self.id}"
 
     # def get_absolute_url(self):
     #     return reverse('listing_detail', kwargs={'pk': self.pk})  # Assuming a detail view
@@ -106,3 +106,18 @@ class Highlight(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.id}"
+
+
+class Interested(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='interested_users')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interested_listings')
+    make_deal = models.BooleanField(default=False)
+    confirm_deal = models.BooleanField(default=False)
+    deposit_paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('listing', 'user')
+
+    def __str__(self):
+        return f"{self.listing} - {self.id}"

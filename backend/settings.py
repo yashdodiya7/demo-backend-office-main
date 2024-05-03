@@ -1,4 +1,3 @@
-
 from datetime import timedelta
 from pathlib import Path
 import cloudinary
@@ -10,6 +9,18 @@ cloudinary.config(cloud_name='dxwxpfxgi',
 
 # API KEYS
 TWOFACTOR_API_KEY = "b9bf68ef-fa2d-11ee-8cbb-0200cd936042"
+
+# Stripe key
+STRIPE_PUBLISHABLE_KEY = "pk_test_51P8GTRSHvWfLAe0cstoDlCEGTQ0eOqbJK8oSI8zbVnRHiezy3nbEnlL3dTuUZBkLmvYaMujrLdSivy7vaAr37izH00mkZWpUjj"
+
+STRIPE_SECRET_KEY = "sk_test_51P8GTRSHvWfLAe0cwXoZ17FttK8XecGTljj9404t6dYGSDYYC2RU1isB8r1Q6YcdcQOEzuyU7YTBY2XcuqmCj6iz00TzyRU5nC"
+
+STRIPE_PRICE_ID_BASIC = 'price_1P8hZDSHvWfLAe0cOpXo7Ifx'
+STRIPE_PRICE_ID_PREMIUM = 'price_1PAn0eSHvWfLAe0ctPQoUEJO'
+
+STRIPE_ENDPOINT_SECRET = "whsec_5778d1cb8da7402d19e6ecf0289c53cf49b81637b148ced4ac1cdb488e5f1db8"
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,12 +34,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-6b$4s*9epi3f_*p@m8+i)3jk#qxgv8@2p-aw-$ve*u*)s=g-o4"
 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'yashdodiya501@gmail.com'
+EMAIL_HOST_PASSWORD = 'wbtf zaae yqzt bgcr'
+DEFAULT_FROM_EMAIL = 'nestmates@gmail.com'
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
 # Application definition
+
+# CELERY_BROKER_URL = 'amqp://localhost'  # Assuming local message broker
+# CELERY_RESULT_BACKEND = 'django_celery_beat.backends.database:DatabaseBackend'
+#
+# CELERY_BEAT_SCHEDULE = {
+#     'check_subscriptions': {
+#         'task': 'payments.tasks.check_and_update_subscriptions',
+#         'schedule': '0 0 * * *',  # Runs daily at midnight
+#     },
+# }
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -39,6 +69,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "user",
     "listing",
+    "payments",
     "rest_framework",
     "rest_framework_simplejwt",
 ]

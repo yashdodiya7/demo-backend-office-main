@@ -17,7 +17,8 @@ from rest_framework.exceptions import ValidationError
 
 # Create your models here.
 class UserManager(BaseUserManager):
-    def create_user(self, email, name, gender, age, phone_no, is_host=None, is_verified=None, occupation=None, bio=None,
+    def create_user(self, email, name, gender, age, phone_no, confirmed_deal=None, is_paid=None, is_host=None,
+                    is_verified=None, occupation=None, bio=None,
                     profile_image=None,
                     password=None,
                     password2=None):
@@ -50,6 +51,12 @@ class UserManager(BaseUserManager):
 
         if is_verified:
             user.is_verified = True
+
+        if confirmed_deal:
+            user.confirmed_deal = True
+
+        if is_paid:
+            user.is_paid = True
 
         user.set_password(password)
         user.save(using=self._db)
@@ -100,10 +107,13 @@ class User(AbstractBaseUser):
 
     is_host = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+    confirmed_deal = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False)
 
     age = models.DecimalField(max_digits=2, decimal_places=0)
     bio = models.TextField(max_length=255, blank=True)
-    profile_image = models.URLField(blank=True)
+    profile_image = models.URLField(blank=True,
+                                    default="https://res.cloudinary.com/dxwxpfxgi/image/upload/v1714408857/rijmvo0cqksausiv3ejj.jpg")
 
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)

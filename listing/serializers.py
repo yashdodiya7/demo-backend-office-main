@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from user.models import UserPreference
-from .models import Listing, Amenities, Highlight
+from user.models import UserPreference, User
+from .models import Listing, Amenities, Highlight, Interested
 from .utils import calculate_distance
 
 
@@ -11,7 +11,6 @@ class ListingSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.name', read_only=True)
     user_occupation = serializers.CharField(source='user.occupation', read_only=True)
     user_gender = serializers.CharField(source='user.gender', read_only=True)
-    user_contact_no = serializers.CharField(source='user.phone_no', read_only=True)
     user_profile_image = serializers.CharField(source='user.profile_image', read_only=True)
     match_details = serializers.SerializerMethodField()
 
@@ -166,6 +165,29 @@ class ListingCreateSerializer(serializers.ModelSerializer):
 
 
 class ListingNearbySerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.name', read_only=True)
+    profile_image = serializers.URLField(source='user.profile_image', read_only=True)
     class Meta:
         model = Listing
-        fields = ['id', 'latitude', 'longitude']
+        fields = ['id', 'latitude', 'longitude', 'user_name', 'profile_image']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name', 'gender', 'phone_no', 'occupation', 'age', 'bio', 'profile_image']
+
+
+class InterestedSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Interested
+        fields = '__all__'
+
+
+class MyInterestsSerializer(serializers.ModelSerializer):
+    user = UserSerializer(source='listing.user')
+    class Meta:
+        model = Interested
+        fields = '__all__'

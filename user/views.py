@@ -12,9 +12,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from backend import settings
 from .models import User, UserPreference
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserDataSerilizer, UserProfileSerializer, \
+from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserDetailsSerializer, UserProfileSerializer, \
     UserPreferenceSerializer
 from .utils import verify_aadhar, validate_aadhar_text
+
+from PIL import Image
+import io
 
 
 # generating jwt token from the simple-jwt
@@ -31,7 +34,6 @@ def get_tokens_for_user(user):
 class VerifyPhoneAndSendOTP(APIView):
     def post(self, request):
         phone_number = request.data.get('phone_no')
-        print(phone_number)
 
         # Check if the phone number already exists in the database
         if User.objects.filter(phone_no=phone_number).exists():
@@ -77,22 +79,18 @@ class RegistrationView(APIView):
 class LoginView(APIView):
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
+
         if serializer.is_valid(raise_exception=True):
-            email = serializer.data.get('email')
-            # print(email)
-            password = serializer.data.get('password')
-            # print(password)
+            email = serializer.validated_data.get('email')
+            password = serializer.validated_data.get('password')
             user = authenticate(email=email, password=password)
-            # print(user)
-            # login(request=request, user=user)
 
             if user is not None:
-                user = User.objects.get(email=email)
-                # token, _ = Token.objects.get_or_create(user=user)
                 refresh_token = RefreshToken.for_user(user)
+                user_serializer = UserDetailsSerializer(user)  # Serialize user details without password
                 return Response(
                     {"tokens": {"refresh": str(refresh_token), "access": str(refresh_token.access_token)},
-                     "message": "Login success"}, status=status.HTTP_200_OK)
+                     "message": "Login success", "data": user_serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response({'errors': "Email password not valid"},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -104,7 +102,7 @@ class UserDataView(APIView):
     def get(self, request, pk):
         user_data = User.objects.get(pk=pk)
         print(user_data)
-        serializer = UserDataSerilizer(user_data)
+        serializer = UserDetailsSerializer(user_data)
         return Response(serializer.data, status.HTTP_200_OK)
 
 
@@ -129,21 +127,38 @@ class UserProfileView(APIView):
         user.email = data.get("email", user.email)
         user.phone_no = data.get("phone_no", user.phone_no)
         user.bio = data.get("bio", user.bio)
-        user.profile_image = data.get("profile_image", user.profile_image)
         user.occupation = data.get("occupation", user.occupation)
         user.gender = data.get("gender", user.gender)
         user.age = data.get("age", user.age)
 
-        # profile.cleanliness = data.get("cleanliness", profile.cleanliness)
-        # profile.guests = data.get("guests", profile.guests)
-        # profile.pets = data.get("pets", profile.pets)
-        # profile.smoking = data.get("smoking", profile.smoking)
-        # profile.overnight_stays = data.get("overnight_stays", profile.overnight_stays)
-        # profile.drinking_preference = data.get("drinking_preference", profile.drinking_preference)
-
         if 'profile_image' in request.data:
             profile_image = request.data.get('profile_image')
             if isinstance(profile_image, InMemoryUploadedFile):
+                # Process the image if it's not a URL
+                # image_data = profile_image.read()
+                # image = Image.open(io.BytesIO(image_data))
+                #
+                # # Crop the image to a square
+                # width, height = image.size
+                # size = min(width, height)
+                # left = (width - size) / 2
+                # top = 0  # Start cropping from the top
+                # right = (width + size) / 2
+                # bottom = size
+                # image = image.crop((left, top, right, bottom))
+                #
+                # # Resize the image to a square of desired size (optional)
+                # new_size = (200, 200)
+                # image = image.resize(new_size)
+                #
+                # # Convert the processed image back to bytes
+                # output = io.BytesIO()
+                # image.save(output, format='JPEG')
+                # output.seek(0)
+                #
+                # # Upload the processed image to Cloudinary
+                # upload_data = cloudinary.uploader.upload(output, folder="profile_images")
+
                 # Process the image if it's not a URL
                 upload_data = cloudinary.uploader.upload(profile_image)
                 url = upload_data['url']
@@ -171,7 +186,7 @@ class UserPreferenceAPIView(APIView):
     def post(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         print(request.data)
-        serializer = UserPreferenceSerializer(data=request.data,  context={"request": request})
+        serializer = UserPreferenceSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save()
 
@@ -209,6 +224,7 @@ class AadharVerificationView(APIView):
 
         # Check the image for text
         is_text_present = verify_aadhar(image_path)
+        print(is_text_present)
         name_present, aadhar_number_valid = validate_aadhar_text(is_text_present, user.name)
 
         is_verified = False
@@ -219,4 +235,5 @@ class AadharVerificationView(APIView):
             user.save()
             return Response({"is_verified": is_verified}, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "Upload Valid Aaadhar According to Instructions"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Upload Valid Aaadhar According to Instructions"},
+                            status=status.HTTP_400_BAD_REQUEST)

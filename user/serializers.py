@@ -37,17 +37,18 @@ class UserLoginSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'password']
 
 
-class UserDataSerilizer(serializers.ModelSerializer):
+class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
-        fields = "__all__"
+        fields = ['id', 'email', 'name', 'gender', 'phone_no', 'occupation', 'is_host', 'is_verified', 'age', 'bio',
+                  'profile_image', 'confirmed_deal']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
         fields = ['name', 'phone_no', 'profile_image', 'email', 'gender', 'occupation', 'bio', 'age', 'is_host',
-                  'is_verified']
+                  'is_verified', 'confirmed_deal', 'is_paid']
 
 
 class UserPreferenceSerializer(serializers.ModelSerializer):
