@@ -195,34 +195,40 @@ class GetUpdateListingView(APIView):
 
         if request.user.is_host and request.user == listing.user and listing.is_available:
             # Update the listing data
-            images = request.FILES.getlist('images')
-            image_urls = getattr(listing, 'image_urls', [])
+            images = request.data.getlist('images')
+            image_urls = []
 
             for image in images:
+                if hasattr(image, 'chunks'):  # Check if image is an object with 'chunks' attribute
+                    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                        for chunk in image.chunks():
+                            temp_file.write(chunk)
 
-                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                    for chunk in image.chunks():
-                        temp_file.write(chunk)
+                    # Get the path of the saved image file
+                    image_path = temp_file.name
 
-                # Get the path of the saved image file
-                image_path = temp_file.name
+                    # Check the image for text
+                    is_text_present = check_image_for_text(image_path)
 
-                # Check the image for text
-                is_text_present = check_image_for_text(image_path)
+                    if is_text_present:
+                        # Delete the temporary file
+                        os.remove(image_path)
+                        return Response({"message": "You cannot upload an image with Address or Number"},
+                                        status=status.HTTP_400_BAD_REQUEST)
 
-                if is_text_present:
-                    # Delete the temporary file
-                    os.remove(image_path)
-                    return Response({"message": "You can not upload image with Address or Number"},
-                                    status=status.HTTP_400_BAD_REQUEST)
-
+                    else:
+                        # Upload image to Cloudinary
+                        upload_data = cloudinary.uploader.upload(image_path)
+                        url = upload_data['url']
+                        image_urls.append(url)
+                        # Remove local image file after uploading
+                        os.remove(image_path)
                 else:
-                    upload_data = cloudinary.uploader.upload(image_path)
-                    url = upload_data['url']
-                    image_urls.append(url)
-                    os.remove(image_path)
+                    # Image is already a URL, directly append it
+                    image_urls.append(image)
 
-            setattr(listing, 'image_urls', image_urls)
+            print("image_urls", image_urls)
+            setattr(listing, "image_urls", image_urls)
 
             for key, value in request.data.items():
                 if key == 'images':

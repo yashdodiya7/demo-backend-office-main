@@ -89,13 +89,8 @@ class GetAllListDataSerializer(serializers.ModelSerializer):
                 else:
                     unmatched_fields.append(field.name)
 
-        print("matching_fields", matching_fields)
-        print("listing_user_total", listing_user_total)
-
         # Calculate matching percentage
         match_percentage = (matching_fields / listing_user_total) * 100 if total_fields > 0 else 0
-
-        print("match percentage", match_percentage)
 
         # Get names of user preferences with a value of True
         user_true_preferences = [field.name for field in UserPreference._meta.get_fields() if

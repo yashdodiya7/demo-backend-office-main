@@ -20,9 +20,7 @@ class YourCustomViewSet(VerificationViewSet):
 
         print("phone no", phone_number)
 
-        cleaned_phone_number = phone_number[3:]
-
-        if User.objects.filter(phone_no=cleaned_phone_number).exists():
+        if User.objects.filter(phone_no=phone_number).exists():
             return Response({"error": "Phone number already exists"}, status=400)
 
         serializer = phone_serializers.SMSVerificationSerializer(data=request.data)
