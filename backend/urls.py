@@ -1,4 +1,3 @@
-
 from django.contrib import admin
 from django.urls import path, include
 
@@ -7,4 +6,5 @@ urlpatterns = [
     path("user/", include("user.urls")),
     path("listing/", include("listing.urls")),
     path("payment/", include("payments.urls")),
+    path("verify/", include("phoneverify.urls")),
 ]

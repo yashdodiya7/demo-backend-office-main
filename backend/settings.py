@@ -20,8 +20,6 @@ STRIPE_PRICE_ID_PREMIUM = 'price_1PAn0eSHvWfLAe0ctPQoUEJO'
 
 STRIPE_ENDPOINT_SECRET = "whsec_5778d1cb8da7402d19e6ecf0289c53cf49b81637b148ced4ac1cdb488e5f1db8"
 
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -67,9 +65,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     "user",
     "listing",
     "payments",
+    "phoneverify",
+
+    "phone_verify",
     "rest_framework",
     "rest_framework_simplejwt",
 ]
@@ -84,6 +86,24 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# SMS verification twillio
+
+PHONE_VERIFICATION = {
+    'BACKEND': 'phone_verify.backends.twilio.TwilioBackend',
+    'OPTIONS': {
+        'SID': 'ACf2cd7ce768a181058e7bd738ff423d66',
+        'SECRET': '41aeb2b42316ee807a6bda8e39610fe6',
+        'FROM': '+12564748549',
+        'SANDBOX_TOKEN': '123456',
+    },
+    'TOKEN_LENGTH': 6,
+    'MESSAGE': 'Welcome to Mates! Please use security code {security_code} to proceed.',
+    'APP_NAME': 'Phone Verify',
+    'SECURITY_CODE_EXPIRATION_TIME': 3600,  # In seconds only
+    'VERIFY_SECURITY_CODE_ONLY_ONCE': False,
+    # If False, then a security code can be used multiple times for verification
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

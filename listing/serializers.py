@@ -65,14 +65,15 @@ class GetAllListDataSerializer(serializers.ModelSerializer):
         total_fields = 0
         matching_fields = 0
         logged_in_user_preferences_total = 0
+        listing_user_total = 0
 
         for field in UserPreference._meta.get_fields():
 
             if field.name != 'user' and field.name != 'id':
-                logged_in_user_value = getattr(logged_in_user_preferences, field.name)
+                listing_user_value = getattr(listing_user_preferences, field.name)
 
-                if logged_in_user_value:
-                    logged_in_user_preferences_total += 1
+                if listing_user_value:
+                    listing_user_total += 1
 
         # Iterate through fields of UserPreference model
         for field in UserPreference._meta.get_fields():
@@ -88,8 +89,13 @@ class GetAllListDataSerializer(serializers.ModelSerializer):
                 else:
                     unmatched_fields.append(field.name)
 
+        print("matching_fields", matching_fields)
+        print("listing_user_total", listing_user_total)
+
         # Calculate matching percentage
-        match_percentage = (matching_fields / logged_in_user_preferences_total) * 100 if total_fields > 0 else 0
+        match_percentage = (matching_fields / listing_user_total) * 100 if total_fields > 0 else 0
+
+        print("match percentage", match_percentage)
 
         # Get names of user preferences with a value of True
         user_true_preferences = [field.name for field in UserPreference._meta.get_fields() if
@@ -167,6 +173,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
 class ListingNearbySerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.name', read_only=True)
     profile_image = serializers.URLField(source='user.profile_image', read_only=True)
+
     class Meta:
         model = Listing
         fields = ['id', 'latitude', 'longitude', 'user_name', 'profile_image']
@@ -180,14 +187,69 @@ class UserSerializer(serializers.ModelSerializer):
 
 class InterestedSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    match_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Interested
         fields = '__all__'
 
+    def get_match_details(self, instance):
+        # Retrieve preferences of the logged-in user
+        logged_in_user_preferences = self.context['request'].user.preferences
+
+        # Retrieve preferences of the user who created the listing
+        listing_user_preferences = instance.user.preferences
+
+        # Initialize dictionaries to store matched and unmatched fields
+        matched_fields = []
+        unmatched_fields = []
+
+        # Calculate matching fields and percentages
+        total_fields = 0
+        matching_fields = 0
+        logged_in_user_preferences_total = 0
+
+        for field in UserPreference._meta.get_fields():
+
+            if field.name != 'user' and field.name != 'id':
+                logged_in_user_value = getattr(logged_in_user_preferences, field.name)
+
+                if logged_in_user_value:
+                    logged_in_user_preferences_total += 1
+
+        # Iterate through fields of UserPreference model
+        for field in UserPreference._meta.get_fields():
+            # Exclude 'user' field from comparison
+            if field.name != 'user' and field.name != 'id':
+                total_fields += 1
+                # Check if the field is True for both users
+                logged_in_user_value = getattr(logged_in_user_preferences, field.name)
+                listing_user_value = getattr(listing_user_preferences, field.name)
+                if logged_in_user_value and listing_user_value:
+                    matched_fields.append(field.name)
+                    matching_fields += 1
+                else:
+                    unmatched_fields.append(field.name)
+
+        # Calculate matching percentage
+        match_percentage = (matching_fields / logged_in_user_preferences_total) * 100 if total_fields > 0 else 0
+
+        # Get names of user preferences with a value of True
+        user_true_preferences = [field.name for field in UserPreference._meta.get_fields() if
+                                 getattr(listing_user_preferences, field.name) and field.name not in ['id', 'user']]
+
+        # Return match details along with matching percentage
+        return {
+            'match_percentage': int(match_percentage),
+            'matched_fields': matched_fields,
+            'unmatched_fields': unmatched_fields,
+            'user_preferences': user_true_preferences
+        }
+
 
 class MyInterestsSerializer(serializers.ModelSerializer):
     user = UserSerializer(source='listing.user')
+
     class Meta:
         model = Interested
         fields = '__all__'

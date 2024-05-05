@@ -352,7 +352,7 @@ class InterestedUsersListView(APIView):
             interested_users = interested_users.order_by('-created_at')
 
             # Serialize the interested users
-            serializer = InterestedSerializer(interested_users, many=True)
+            serializer = InterestedSerializer(interested_users, many=True, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Listing.DoesNotExist:
             return Response({'error': 'User listing not found'}, status=status.HTTP_404_NOT_FOUND)
