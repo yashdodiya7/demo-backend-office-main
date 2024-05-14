@@ -1,7 +1,8 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+
 from . import models
-from .models import UserPreference
+from .models import UserPreference, Contact
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -67,3 +68,9 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         return obj.user.name if obj.user else None
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'

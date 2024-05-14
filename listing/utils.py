@@ -1,8 +1,8 @@
-import pytesseract
-import cv2
-import re
 import math
-import os
+import re
+
+import cv2
+import pytesseract
 
 
 def check_image_for_text(image_path):
@@ -53,3 +53,36 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     distance = R * c
 
     return distance
+
+
+def calculate_distance_in_meter(lat1, lon1, lat2, lon2):
+    """
+    Calculate the distance between two points on the Earth's surface
+    using the Haversine formula.
+    """
+    # Convert latitude and longitude from degrees to radians
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    # Radius of the Earth in meters
+    earth_radius = 6371000  # in meters
+
+    # Haversine formula
+    d_lat = lat2_rad - lat1_rad
+    d_lon = lon2_rad - lon1_rad
+    a = math.sin(d_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(d_lon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = earth_radius * c
+
+    return distance
+
+
+def within_radius(user_lat, user_lon, location_lat, location_lon, radius=100):
+    """
+    Check if a location is within a specified radius of a user's location.
+    """
+    distance = calculate_distance_in_meter(user_lat, user_lon, location_lat, location_lon)
+    print("distance", distance)
+    return distance <= radius

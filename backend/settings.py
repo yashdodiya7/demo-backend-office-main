@@ -1,5 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
+
 import cloudinary
 
 # Cloudinary config
@@ -74,7 +75,26 @@ INSTALLED_APPS = [
     "phone_verify",
     "rest_framework",
     "rest_framework_simplejwt",
+    "djoser",
+    # 'channels',
 ]
+
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Use in-memory layer for development
+#     },
+# }
+
+# Djoser configuration
+
+DJOSER = {
+    "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": True,
+    "ACTIVATION_URL": "activation/{uid}/{token}",
+    "USER_CREATE_PASSWORD_RETYPE": True,
+    "PASSWORD_RESET_CONFIRM_RETYPE": True,
+    "TOKEN_MODEL": None,
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -104,6 +124,8 @@ PHONE_VERIFICATION = {
     'VERIFY_SECURITY_CODE_ONLY_ONCE': False,
     # If False, then a security code can be used multiple times for verification
 }
+
+TIME_ZONE = 'Asia/Kolkata'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

@@ -1,15 +1,14 @@
 import json
 from datetime import timedelta
 
-from django.db.models import Q
-from django.utils import timezone
-
 # Create your views here.
 import stripe
 from django.conf import settings
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from listing.models import Listing, Interested
 from payments.models import StripeCustomer, TransactionDetails
@@ -37,7 +36,7 @@ class ProcessPaymentAPIView(APIView):
                 customer_email=request.user.email,
                 client_reference_id=request.user.id if request.user.is_authenticated else None,
                 success_url=domain_url + '/myinterests',
-                cancel_url=domain_url + 'cancel/',
+                cancel_url=domain_url + '/myinterests',
                 payment_method_types=['card'],
                 mode='payment',  # Change mode to 'payment' if it's not a subscription
                 line_items=[
@@ -89,7 +88,7 @@ class CreateCheckoutSessionView(APIView):
                 client_reference_id=request.user.id if request.user.is_authenticated else None,
                 # success_url=domain_url + 'success?session_id={CHECKOUT_SESSION_ID}',
                 success_url=domain_url + 'subscription',
-                cancel_url=domain_url + 'cancel/',
+                cancel_url=domain_url + 'subscription',
                 payment_method_types=['card'],
                 mode='subscription',
                 line_items=[

@@ -1,10 +1,6 @@
-import datetime
-
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.validators import RegexValidator
 from django.db import models
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
-from django.db.models.signals import post_save
-from rest_framework.exceptions import ValidationError
 
 
 # Validators
@@ -100,7 +96,7 @@ class User(AbstractBaseUser):
 
     name = models.CharField(max_length=200)
     gender = models.CharField(max_length=255, choices=GENDER_CHOICES, blank=True)
-    PHONE_REGEX = r'^\d{10}$'
+    PHONE_REGEX = r"(^\+91?\d{10})|^\+?\d{12}$"
     phone_no = models.CharField(max_length=20,
                                 validators=[RegexValidator(PHONE_REGEX, 'Enter a valid phone number.')])
     occupation = models.CharField(max_length=255, blank=True)
@@ -162,3 +158,17 @@ class UserPreference(models.Model):
 
     def __str__(self):
         return self.user.name
+
+
+class Contact(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    PHONE_REGEX = r"(^\+91?\d{10})|^\+?\d{12}$"
+    phone_no = models.CharField(max_length=20,
+                                validators=[RegexValidator(PHONE_REGEX, 'Enter a valid phone number.')])
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"

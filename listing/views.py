@@ -1,35 +1,28 @@
 import os
 import tempfile
-from copy import deepcopy
+from datetime import datetime
 
 import cloudinary.uploader
+from django.core.mail import EmailMessage
 from django.db import IntegrityError
 from django.db.models import Q
-from django.shortcuts import render
+from fpdf import FPDF
+from rest_framework import status
 from rest_framework.generics import get_object_or_404
-
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated  # Require authentication
+from rest_framework.response import Response
 # Create your views here.
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated  # Require authentication
-from rest_framework import status, generics
 
 from payments.models import TransactionDetails
+from user.models import User
 from user.serializers import UserProfileSerializer
-from .models import Listing, Amenities, Highlight, Interested  # Import all models
+from .models import Listing, Interested  # Import all models
 from .serializers import ListingSerializer, ListingCreateSerializer, \
     GetAllListDataSerializer, GetAllListUserNotLoginSerializer, ListingNearbySerializer, \
     InterestedSerializer, MyInterestsSerializer  # Import your ListingSerializer
-from user.models import User
-
-from .utils import check_image_for_text, calculate_distance
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-
-from django.core.mail import EmailMessage
-from datetime import datetime
-from fpdf import FPDF
+from .utils import check_image_for_text, within_radius
 
 
 class ListingSearchAPIView(APIView):
@@ -40,18 +33,26 @@ class ListingSearchAPIView(APIView):
             return GetAllListUserNotLoginSerializer
 
     def get(self, request):
-        user_name = request.query_params.get('user_name', '')
-        occupation = request.query_params.get('occupation', '')
+        location = request.query_params.get('location', '')
+        # occupation = request.query_params.get('occupation', '')
+        male = request.query_params.get('male', False)
+        female = request.query_params.get('female', False)
         user_latitude = request.query_params.get('user_latitude')
         user_longitude = request.query_params.get('user_longitude')
 
-        # Filter queryset based on user_name and occupation
-        queryset = Listing.objects.all()
+        # Pagination of the search data
+        paginator = PageNumberPagination()
+        paginator.page_size = 4
+
+        # Filter queryset based on user_name, occupation, and gender
+        queryset = Listing.objects.filter(is_available=True)
         filter_conditions = Q()
-        if user_name:
-            filter_conditions |= Q(user__name__icontains=user_name)
-        if occupation:
-            filter_conditions |= Q(user__occupation__icontains=occupation)
+        if location:
+            filter_conditions |= Q(location__icontains=location)
+        if male == 'true':
+            filter_conditions |= Q(looking_for='male')
+        if female == 'true':
+            filter_conditions |= Q(looking_for='female')
         if filter_conditions:
             queryset = queryset.filter(filter_conditions)
 
@@ -59,34 +60,63 @@ class ListingSearchAPIView(APIView):
         if request.user.is_authenticated:
             queryset = queryset.exclude(user=request.user)
 
+        result_page = paginator.paginate_queryset(queryset, request)
+
+        # Calculate total number of pages
+        total_pages = paginator.page.paginator.num_pages
+
         # Serialize queryset and return response
         serializer_class = self.get_serializer_class()
-        serializer = serializer_class(queryset, many=True, context={"request": request, "user_latitude": user_latitude,
-                                                                    "user_longitude": user_longitude})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = serializer_class(result_page, many=True,
+                                      context={"request": request, "user_latitude": user_latitude,
+                                               "user_longitude": user_longitude})
+
+        return Response({"listings": serializer.data, "total_pages": total_pages}, status=status.HTTP_200_OK)
 
 
 class GetAllListings(APIView):
+
     def post(self, request):
         user_id = request.user.id if request.user.is_authenticated else None
 
         user_latitude = request.data.get('user_latitude')
         user_longitude = request.data.get('user_longitude')
+        paginator = PageNumberPagination()
+        paginator.page_size = 4  # Number of listings per page
 
         if user_id:
             listings = Listing.objects.exclude(Q(user=request.user) | Q(is_available=False))
-            serializer = GetAllListDataSerializer(listings, many=True,
+
+            result_page = paginator.paginate_queryset(listings, request)
+            serializer = GetAllListDataSerializer(result_page, many=True,
                                                   context={'request': request, 'user_latitude': user_latitude,
                                                            'user_longitude': user_longitude})
+            # Check subscription status and update is_active if end date is in the past
+            # try:
+            #     subscription = StripeCustomer.objects.get(user=request.user)
+            #     if subscription.end_date and subscription.end_date < datetime.now():
+            #         subscription.is_active = False
+            #         subscription.save()
+            # except StripeCustomer.DoesNotExist:
+            #     # Handle case where subscription doesn't exist for the user
+            #
+            #     pass
         else:
             listings = Listing.objects.filter(is_available=True)
-            serializer = GetAllListUserNotLoginSerializer(listings, many=True, context={
+
+            result_page = paginator.paginate_queryset(listings, request)
+            serializer = GetAllListUserNotLoginSerializer(result_page, many=True, context={
                 'user_latitude': user_latitude,
                 'user_longitude': user_longitude
             })
 
+        # Calculate total number of pages
+        total_pages = paginator.page.paginator.num_pages
+
+        # is_paid = subscription.is_active if subscription else False
+
         if listings.exists():  # Check if the queryset is not empty
-            return Response(serializer.data)
+            return Response({"listings": serializer.data, "total_pages": total_pages, "is_paid": "false"})
         else:
             return Response({"message": "No listings found"}, status=status.HTTP_204_NO_CONTENT)
 
@@ -100,8 +130,29 @@ class CreateListingView(APIView):
             return Response({"message": "You cannot create another post as you already have an available post"},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # verify location first then create listing
+        # user_latitude = request.data.get('userLatitude')
+        # user_longitude = request.data.get('userLongitude')
+        # listing_latitude = float(request.data.get('latitude', 0))
+        # listing_longitude = float(request.data.get('longitude', 0))
+        #
+        # if user_latitude is None or user_longitude is None:
+        #     # Return a response indicating that location access is required
+        #     return Response({"error": "Please allow location access"}, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # user_latitude = float(user_latitude)
+        # user_longitude = float(user_longitude)
+        #
+        # # Calculate the distance between user and listing
+        # distance = within_radius(user_latitude, user_longitude, listing_latitude, listing_longitude)
+        #
+        # if not distance:
+        #     return Response({"error": "User location is not within 100m of the listing location"},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+
         images = request.data.getlist('images')  # Get list of InMemoryUploadedFile objects
         image_urls = []
+
         for image in images:
 
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -158,6 +209,10 @@ class GetSingleListing(APIView):
             return Response({"message": "Listing Does not exists"}, status=status.HTTP_400_BAD_REQUEST)
         # user_id = request.user.id if request.user.is_authenticated else None
         serializer = ListingSerializer(listing)
+
+        if not request.user.is_authenticated or not request.user.is_paid:
+            serializer.instance.description = None
+
         return Response(serializer.data)
 
     def delete(self, request):
@@ -318,10 +373,11 @@ class InterestedCreateView(APIView):
             return Response({'error': 'Hosts cannot express interest in listings'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            serializer = InterestedSerializer(data={'listing': listing_id, 'user': request.user.id})
+            serializer = InterestedSerializer(
+                data={'listing': listing_id, 'user': request.user.id})
             if serializer.is_valid():
                 serializer.save(listing=listing, user=request.user)
-                return Response({"message": "Successfully Interested"},
+                return Response({"message": "Successfully Interest Created"},
                                 status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError as e:

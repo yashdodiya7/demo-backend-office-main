@@ -1,8 +1,8 @@
 import tempfile
 
 import cloudinary.uploader
-from django.contrib.auth import authenticate
 import requests
+from django.contrib.auth import authenticate
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -13,11 +13,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from backend import settings
 from .models import User, UserPreference
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserDetailsSerializer, UserProfileSerializer, \
-    UserPreferenceSerializer
+    UserPreferenceSerializer, ContactSerializer
 from .utils import verify_aadhar, validate_aadhar_text
-
-from PIL import Image
-import io
 
 
 # generating jwt token from the simple-jwt
@@ -30,35 +27,6 @@ def get_tokens_for_user(user):
 
 
 # Create your views here.
-
-class VerifyPhoneAndSendOTP(APIView):
-    def post(self, request):
-        phone_number = request.data.get('phone_no')
-
-        # Check if the phone number already exists in the database
-        if User.objects.filter(phone_no=phone_number).exists():
-            return Response({'message': 'User with this phone number already exists please Sign In'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        # If phone number doesn't exist, proceed to send OTP using 2Factor API
-        api_key = settings.TWOFACTOR_API_KEY  # Get your 2Factor API key from settings
-        response = requests.get(
-            'https://2factor.in/API/V1/{api_key}/SMS/+91{phone_number}/AUTOGEN3/'.format(api_key=api_key,
-                                                                                         phone_number=phone_number))
-
-        # Check if the OTP request was successful
-        if response.status_code == 200:
-            data = response.json()
-            print(data)
-            if data['Status'] == 'Success':
-                return Response({'message': 'OTP sent successfully', 'Details': data['Details'], "Status": "Success"},
-                                status=status.HTTP_200_OK)
-            else:
-                return Response({'message': 'Failed to send OTP', "Details": data['Details']},
-                                status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({'message': 'Failed to connect to 2Factor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class RegistrationView(APIView):
     def post(self, request):
@@ -123,6 +91,13 @@ class UserProfileView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
+        new_email = data.get("email")
+        if new_email and new_email != user.email:
+            # Check if the new email already exists in the database
+            if User.objects.exclude(pk=user_id).filter(email=new_email).exists():
+                return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # data = request.data
         user.name = data.get("name", user.name)
         user.email = data.get("email", user.email)
         user.phone_no = data.get("phone_no", user.phone_no)
@@ -237,3 +212,13 @@ class AadharVerificationView(APIView):
         else:
             return Response({"message": "Upload Valid Aaadhar According to Instructions"},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class ContactFormAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"data": serializer.data, "message": "Thank you for the contact"},
+                            status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import User, UserPreference
+from .models import User, UserPreference, Contact
 
 # Register your models here.
 admin.site.register(User)
 admin.site.register(UserPreference)
+admin.site.register(Contact)

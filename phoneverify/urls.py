@@ -1,5 +1,4 @@
 from rest_framework.routers import DefaultRouter
-from phone_verify.api import VerificationViewSet
 
 from phoneverify.views import YourCustomViewSet
 

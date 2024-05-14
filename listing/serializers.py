@@ -241,6 +241,9 @@ class InterestedSerializer(serializers.ModelSerializer):
             'user_preferences': user_true_preferences
         }
 
+    def create(self, validated_data):
+        return Interested.objects.create(**validated_data)
+
 
 class MyInterestsSerializer(serializers.ModelSerializer):
     user = UserSerializer(source='listing.user')
