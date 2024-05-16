@@ -247,7 +247,12 @@ class InterestedSerializer(serializers.ModelSerializer):
 
 class MyInterestsSerializer(serializers.ModelSerializer):
     user = UserSerializer(source='listing.user')
+    is_available = serializers.SerializerMethodField()
 
     class Meta:
         model = Interested
         fields = '__all__'
+
+    def get_is_available(self, obj):
+        listing = obj.listing
+        return listing.is_available

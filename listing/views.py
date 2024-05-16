@@ -22,7 +22,7 @@ from .models import Listing, Interested  # Import all models
 from .serializers import ListingSerializer, ListingCreateSerializer, \
     GetAllListDataSerializer, GetAllListUserNotLoginSerializer, ListingNearbySerializer, \
     InterestedSerializer, MyInterestsSerializer  # Import your ListingSerializer
-from .utils import check_image_for_text, within_radius
+from .utils import check_image_for_text
 
 
 class ListingSearchAPIView(APIView):
@@ -320,7 +320,7 @@ class NearbyPostsAPIView(APIView):
         }
 
         # Fetch nearby posts based on the current post's location
-        nearby_posts = Listing.objects.exclude(pk=listId)
+        nearby_posts = Listing.objects.filter(is_available=True)
 
         # Exclude listings owned by the user
         # nearby_posts = nearby_posts.exclude(Q(user=user_id))
@@ -395,6 +395,7 @@ class InterestedListView(APIView):
 
         # Serialize the interested listings
         serializer = MyInterestsSerializer(interested_listings, many=True)
+
 
         # Return the serialized data as a response
         return Response(serializer.data, status=status.HTTP_200_OK)
