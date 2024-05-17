@@ -36,10 +36,10 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371.0
 
     # Convert latitude and longitude from degrees to radians
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
+    lat1_rad = math.radians(float(lat1))
+    lon1_rad = math.radians(float(lon1))
+    lat2_rad = math.radians(float(lat2))
+    lon2_rad = math.radians(float(lon2))
 
     # Calculate differences
     dlon = lon2_rad - lon1_rad

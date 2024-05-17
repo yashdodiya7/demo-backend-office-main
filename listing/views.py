@@ -495,45 +495,21 @@ class ConfirmDealAPIView(APIView):
         pdf.add_page()
         pdf.set_auto_page_break(auto=True, margin=15)
 
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(0, 10, f"The deal between the Room Poster and Room Seeker has been confirmed.", ln=True)
+        pdf.cell(0, 10, f"Monthly Rent: {rent_amount}", ln=True)
+        pdf.cell(0, 10, f"Room Address: {room_address}", ln=True)
+
+        pdf.ln(10)  # Add a blank line for spacing
+
         pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 10, "Acknowledgement:", ln=True)
 
-        pdf.cell(0, 10, f"Room Details: Address of the Room: {room_address}", ln=True)
-        pdf.cell(0, 10, f"Terms of Occupancy: Monthly Rent: {rent_amount} to be paid by {room_seeker_name}", ln=True)
-
-        pdf.set_font("Arial", "B", 12)
-
-        pdf.cell(0, 10, "Responsibilities of Room Seeker:", ln=True)
         pdf.set_font("Arial", "", 12)
-        pdf.multi_cell(0, 10,
-                       "- Paying rent and utilities on time.\n- Maintaining cleanliness and tidiness in shared areas.\n- Respecting the privacy and property of other occupants.\n- Informing Room Poster in advance about any guests or visitors.",
-                       0, "L")
-
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, "Responsibilities of Room Poster:", ln=True)
-        pdf.set_font("Arial", "", 12)
-        pdf.multi_cell(0, 10,
-                       "- Providing a habitable living environment.\n- Handling repairs and maintenance promptly.\n- Respecting the privacy and property of Room Seeker.\n- Giving reasonable notice for any changes in the living arrangement.",
-                       0, "L")
-
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10,
-                 f"Termination of Agreement: Either party may terminate this Agreement with [Number of Days] days' notice in writing.",
-                 ln=True)
-        pdf.cell(0, 10, "Upon termination, Room Seeker shall vacate the premises and return keys to Room Poster.",
-                 ln=True)
-
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, "Authorization:", ln=True)
-        pdf.set_font("Arial", "", 12)
-        pdf.multi_cell(0, 10,
-                       "Both parties acknowledge that they have read and understood the terms of this Agreement.\nRoom Seeker agrees to abide by the rules and regulations set forth herein.\nRoom Poster agrees to provide a safe and comfortable living environment.",
-                       0, "L")
-
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, "Signatures:", ln=True)
-        pdf.set_font("Arial", "", 12)
-        pdf.cell(0, 10, f"Room Seeker: {room_seeker_name} Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
-        pdf.cell(0, 10, f"Room Poster: {room_poster_name} Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
+        pdf.cell(0, 10, f"Room Seeker: {room_seeker_name}", ln=True)
+        pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
+        pdf.cell(0, 10, f"Room Poster: {room_poster_name}", ln=True)
+        pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
 
         return pdf.output(dest="S").encode("latin1")
 
