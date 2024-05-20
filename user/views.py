@@ -1,7 +1,6 @@
 import tempfile
 
 import cloudinary.uploader
-import requests
 from django.contrib.auth import authenticate
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import status
@@ -10,10 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from backend import settings
 from .models import User, UserPreference
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserDetailsSerializer, UserProfileSerializer, \
-    UserPreferenceSerializer, ContactSerializer
+    UserPreferenceSerializer, ContactSerializer, UserPasswordResetEmailSerializer, UserPasswordResetSerializer
 from .utils import verify_aadhar, validate_aadhar_text
 
 
@@ -66,6 +64,35 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UserPasswordResetEmailView(APIView):
+    # permission_classes=[IsAuthenticated,IsUser]
+    def post(self, request, format=None):
+        # print("email reset -> ", request.data)
+        # print("os email", os.environ.get("EMAIL_USER"))
+
+        serializer = UserPasswordResetEmailSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response(
+                {"Message": "Reset password email has been sent to you"},
+                status=status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserPasswordResetView(APIView):
+    # permission_classes=[IsAuthenticated,IsUser]
+    def post(self, request, uid, token, format=None):
+        serializers = UserPasswordResetSerializer(
+            data=request.data, context={"uid": uid, "token": token}
+        )
+        if serializers.is_valid():
+            return Response(
+                {"Message": "Password reset successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UserDataView(APIView):
     def get(self, request, pk):
         user_data = User.objects.get(pk=pk)
@@ -110,37 +137,12 @@ class UserProfileView(APIView):
             profile_image = request.data.get('profile_image')
             if isinstance(profile_image, InMemoryUploadedFile):
                 # Process the image if it's not a URL
-                # image_data = profile_image.read()
-                # image = Image.open(io.BytesIO(image_data))
-                #
-                # # Crop the image to a square
-                # width, height = image.size
-                # size = min(width, height)
-                # left = (width - size) / 2
-                # top = 0  # Start cropping from the top
-                # right = (width + size) / 2
-                # bottom = size
-                # image = image.crop((left, top, right, bottom))
-                #
-                # # Resize the image to a square of desired size (optional)
-                # new_size = (200, 200)
-                # image = image.resize(new_size)
-                #
-                # # Convert the processed image back to bytes
-                # output = io.BytesIO()
-                # image.save(output, format='JPEG')
-                # output.seek(0)
-                #
-                # # Upload the processed image to Cloudinary
-                # upload_data = cloudinary.uploader.upload(output, folder="profile_images")
-
-                # Process the image if it's not a URL
                 upload_data = cloudinary.uploader.upload(profile_image)
                 url = upload_data['url']
                 user.profile_image = url
-            else:
-                # If 'profile_image' is a URL, directly assign it
-                user.profile_image = profile_image
+            # else:
+            #     # If 'profile_image' is a URL, directly assign it
+            #     user.profile_image = profile_image
 
         user.save()
 

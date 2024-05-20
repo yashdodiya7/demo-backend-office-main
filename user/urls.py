@@ -1,10 +1,8 @@
-from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, \
-    PasswordResetCompleteView
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 from . import views
-from .views import ContactFormAPIView
+from .views import ContactFormAPIView, UserPasswordResetEmailView, UserPasswordResetView
 
 urlpatterns = [
     # simplejwt token urls
@@ -21,11 +19,9 @@ urlpatterns = [
     path('aadharverify', views.AadharVerificationView.as_view(), name="aadhar_verify"),
 
     # Reset Password urls
-    path('reset-password', PasswordResetView.as_view(), name='password_reset'),
-    path('reset-password/done', PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('reset-password/confirm/<uidb64>[0-9A-Za-z]+)-<token>/', PasswordResetConfirmView.as_view(),
-         name='password_reset_confirm'),
-    path('reset-password/complete/', PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    path('reset-password', UserPasswordResetEmailView.as_view(), name='user-reset-password-api-view'),
+    path('reset-password/<uid>/<token>', UserPasswordResetView.as_view(),
+         name='user-reset-password-uid-token-api-view'),
 
     # contact us page
     path('submit-contact-form/', ContactFormAPIView.as_view(), name='submit_contact_form'),

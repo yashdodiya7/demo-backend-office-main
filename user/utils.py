@@ -1,9 +1,8 @@
-import numpy as np
-import pytesseract
-import cv2
-import re
-import math
 import os
+
+import cv2
+import pytesseract
+from django.core.mail import EmailMessage
 
 
 def verify_aadhar(image_path):
@@ -49,3 +48,16 @@ def validate_aadhar_text(text, name):
 
     # Return validation results
     return name_present, aadhar_number_valid
+
+
+class Utils:
+    @staticmethod
+    def send_mail(data):
+        email = EmailMessage(
+            subject=data['subject'],
+            body=data['body'],
+            from_email='yashdodiya501@gmail.com',
+            # from_email='pande.amul.dcs24@vnsgu.ac.in',
+            to=[data['to_email']]
+        )
+        email.send()

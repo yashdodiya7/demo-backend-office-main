@@ -426,6 +426,7 @@ class InterestedUsersListView(APIView):
 
 
 class InterestedUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, userId):
         try:
             # Retrieve the listing based on the provided ListId
@@ -496,7 +497,7 @@ class ConfirmDealAPIView(APIView):
         pdf.set_auto_page_break(auto=True, margin=15)
 
         pdf.set_font("Arial", "B", 16)
-        pdf.cell(0, 10, f"The deal between the Room Poster and Room Seeker has been confirmed.", ln=True)
+        pdf.cell(0, 10, f"The deal between the {room_poster_name} and {room_seeker_name} has been confirmed.", ln=True)
         pdf.cell(0, 10, f"Monthly Rent: {rent_amount}", ln=True)
         pdf.cell(0, 10, f"Room Address: {room_address}", ln=True)
 
