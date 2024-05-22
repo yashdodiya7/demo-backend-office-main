@@ -131,15 +131,11 @@ class UserPasswordResetSerializer(serializers.Serializer):
         uid = self.context.get("uid")
         token = self.context.get("token")
 
-        # print("uid ", uid)
-        # print("token ", token)
-
         if password != password2:
             raise serializers.ValidationError(
                 "Password and Confirm Password are not same"
             )
         id = int(smart_str(urlsafe_base64_decode(uid)))
-        # print("id ", type(id))
         user = models.User.objects.get(id=id)
         print("User ", user)
         if not PasswordResetTokenGenerator().check_token(user, token):

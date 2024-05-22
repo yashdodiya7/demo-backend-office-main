@@ -31,9 +31,6 @@ class RegistrationView(APIView):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
-            # email = serializer.validated_data['email']
-            # user = User.objects.get(email=email)
-            # token = get_tokens_for_user(user)
             refresh_token = RefreshToken.for_user(user)
             return Response({"tokens": {"refresh": str(refresh_token), "access": str(refresh_token.access_token)},
                              "message": "registration successfull"},
@@ -65,10 +62,7 @@ class LoginView(APIView):
 
 
 class UserPasswordResetEmailView(APIView):
-    # permission_classes=[IsAuthenticated,IsUser]
     def post(self, request, format=None):
-        # print("email reset -> ", request.data)
-        # print("os email", os.environ.get("EMAIL_USER"))
 
         serializer = UserPasswordResetEmailSerializer(data=request.data)
         if serializer.is_valid():
@@ -80,7 +74,6 @@ class UserPasswordResetEmailView(APIView):
 
 
 class UserPasswordResetView(APIView):
-    # permission_classes=[IsAuthenticated,IsUser]
     def post(self, request, uid, token, format=None):
         serializers = UserPasswordResetSerializer(
             data=request.data, context={"uid": uid, "token": token}
@@ -140,9 +133,6 @@ class UserProfileView(APIView):
                 upload_data = cloudinary.uploader.upload(profile_image)
                 url = upload_data['url']
                 user.profile_image = url
-            # else:
-            #     # If 'profile_image' is a URL, directly assign it
-            #     user.profile_image = profile_image
 
         user.save()
 

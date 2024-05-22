@@ -71,11 +71,6 @@ class UserManager(BaseUserManager):
             gender=gender
         )
         user.is_admin = True
-        # # extra_fields.setdefault('is_active', True)
-        # extra_fields.setdefault('is_admin', True)
-        # # extra_fields.setdefault('is_superuser', True)
-        # extra_fields.setdefault('role', 1)
-        # print(user.is_admin)
 
         user.save(using=self._db)
         return user

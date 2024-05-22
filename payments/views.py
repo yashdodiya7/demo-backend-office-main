@@ -86,7 +86,6 @@ class CreateCheckoutSessionView(APIView):
             checkout_session = stripe.checkout.Session.create(
                 customer_email=request.user.email,
                 client_reference_id=request.user.id if request.user.is_authenticated else None,
-                # success_url=domain_url + 'success?session_id={CHECKOUT_SESSION_ID}',
                 success_url=domain_url + 'subscription',
                 cancel_url=domain_url + 'subscription',
                 payment_method_types=['card'],
@@ -138,8 +137,6 @@ class StripeWebhookView(APIView):
                 amount_paid = session.get('amount_total')
                 amount_paid /= 100
 
-                print(amount_paid, "Amount ----------------")
-
                 listing_id = metadata.get('listing_id')
                 user_id = session.get('client_reference_id')  # Assuming user is authenticated
                 user = User.objects.get(pk=user_id)
@@ -151,7 +148,6 @@ class StripeWebhookView(APIView):
                 ).first()
 
                 interested_record.deposit_paid = True
-                print("Record----------", interested_record)
                 interested_record.save()
                 # Create a new transaction instance
                 new_transaction = TransactionDetails.objects.create(
@@ -160,8 +156,6 @@ class StripeWebhookView(APIView):
                     active_deposit=True,
                     timestamp=timezone.now()  # Assuming you want to timestamp the transaction with the current time
                 )
-
-                print(f"yash added {amount_paid} to their wallet.")
 
             else:
                 # Fetch all the required data from session
@@ -203,8 +197,6 @@ class StripeWebhookView(APIView):
                 user.is_paid = True
                 user.save()
 
-                print(user.name + ' just subscribed. ------------------------------------------------------')
-
         return Response(status=200)
 
 
@@ -215,10 +207,6 @@ class HomeView(APIView):
             stripe.api_key = settings.STRIPE_SECRET_KEY
             subscription = stripe.Subscription.retrieve(stripe_customer.stripeSubscriptionId)
             product = stripe.Product.retrieve(subscription.plan.product)
-
-            # Feel free to fetch any additional data from 'subscription' or 'product'
-            # https://stripe.com/docs/api/subscriptions/object
-            # https://stripe.com/docs/api/products/object
 
             return Response({
                 'subscription': subscription,

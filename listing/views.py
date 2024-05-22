@@ -91,16 +91,6 @@ class GetAllListings(APIView):
             serializer = GetAllListDataSerializer(result_page, many=True,
                                                   context={'request': request, 'user_latitude': user_latitude,
                                                            'user_longitude': user_longitude})
-            # Check subscription status and update is_active if end date is in the past
-            # try:
-            #     subscription = StripeCustomer.objects.get(user=request.user)
-            #     if subscription.end_date and subscription.end_date < datetime.now():
-            #         subscription.is_active = False
-            #         subscription.save()
-            # except StripeCustomer.DoesNotExist:
-            #     # Handle case where subscription doesn't exist for the user
-            #
-            #     pass
         else:
             listings = Listing.objects.filter(is_available=True)
 
@@ -112,8 +102,6 @@ class GetAllListings(APIView):
 
         # Calculate total number of pages
         total_pages = paginator.page.paginator.num_pages
-
-        # is_paid = subscription.is_active if subscription else False
 
         if listings.exists():  # Check if the queryset is not empty
             return Response({"listings": serializer.data, "total_pages": total_pages, "is_paid": "false"})
@@ -129,26 +117,6 @@ class CreateListingView(APIView):
         if request.user.is_host and Listing.objects.filter(user=request.user, is_available=True).exists():
             return Response({"message": "You cannot create another post as you already have an available post"},
                             status=status.HTTP_400_BAD_REQUEST)
-
-        # verify location first then create listing
-        # user_latitude = request.data.get('userLatitude')
-        # user_longitude = request.data.get('userLongitude')
-        # listing_latitude = float(request.data.get('latitude', 0))
-        # listing_longitude = float(request.data.get('longitude', 0))
-        #
-        # if user_latitude is None or user_longitude is None:
-        #     # Return a response indicating that location access is required
-        #     return Response({"error": "Please allow location access"}, status=status.HTTP_400_BAD_REQUEST)
-        #
-        # user_latitude = float(user_latitude)
-        # user_longitude = float(user_longitude)
-        #
-        # # Calculate the distance between user and listing
-        # distance = within_radius(user_latitude, user_longitude, listing_latitude, listing_longitude)
-        #
-        # if not distance:
-        #     return Response({"error": "User location is not within 100m of the listing location"},
-        #                     status=status.HTTP_400_BAD_REQUEST)
 
         images = request.data.getlist('images')  # Get list of InMemoryUploadedFile objects
         image_urls = []
@@ -207,7 +175,6 @@ class GetSingleListing(APIView):
         listing = Listing.objects.get(pk=listId)
         if not listing.is_available:
             return Response({"message": "Listing Does not exists"}, status=status.HTTP_400_BAD_REQUEST)
-        # user_id = request.user.id if request.user.is_authenticated else None
         serializer = ListingSerializer(listing)
 
         if not request.user.is_authenticated or not request.user.is_paid:
@@ -321,9 +288,6 @@ class NearbyPostsAPIView(APIView):
 
         # Fetch nearby posts based on the current post's location
         nearby_posts = Listing.objects.filter(is_available=True)
-
-        # Exclude listings owned by the user
-        # nearby_posts = nearby_posts.exclude(Q(user=user_id))
 
         # Serialize the nearby posts
         serializer = ListingNearbySerializer(nearby_posts, many=True)
@@ -499,7 +463,7 @@ class ConfirmDealAPIView(APIView):
         pdf.set_font("Arial", "B", 16)
         pdf.cell(0, 10, f"The deal between the {room_poster_name} and {room_seeker_name} has been confirmed.", ln=True)
         pdf.cell(0, 10, f"Monthly Rent: {rent_amount}", ln=True)
-        pdf.cell(0, 10, f"Room Address: {room_address}", ln=True)
+        pdf.multi_cell(0, 10, f"Room Address: {room_address}")
 
         pdf.ln(10)  # Add a blank line for spacing
 
