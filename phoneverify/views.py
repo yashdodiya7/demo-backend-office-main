@@ -24,7 +24,6 @@ class YourCustomViewSet(VerificationViewSet):
         serializer.is_valid(raise_exception=True)
         if request.user.id is not None:
             user_id = request.user.id
-            print("----------", user_id)
             user = User.objects.get(pk=user_id)
             user.phone_no = phone_number
             user.save()
